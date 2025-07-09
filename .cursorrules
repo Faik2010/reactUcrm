@@ -1,0 +1,221 @@
+# 🎯 REACT FALAN PROJESİ - KRİTİK BİLGİLER
+
+## 🏗️ PROJE MİMARİSİ
+
+### 🔐 AUTHENTICATION & MULTI-TENANT YAPISI
+- **Ana Backend:** Kullanıcı login, lisans tanımlamaları
+- **JWT Token:** İçerisinde kullanıcıya özel backend URL bilgisi bulunur
+- **Multi-tenant:** Her kullanıcının kendi backend endpoint'i
+- **Lisans Tabanlı Yetki:** Modül erişimleri satın alınan lisanslara bağlı
+
+### 📋 ANA MODÜLLER
+1. **Firmalar** - Müşteri/tedarikçi yönetimi
+2. **Firma Detayları** - Firmalara ait detay bilgileri  
+3. **Stoklar** - Ürün/stok kartları yönetimi
+4. **Teklifler** - Teklif listesi ve yönetimi
+5. **Teklif Oluştur** - Yeni teklif oluşturma ekranı
+6. **Siparişler** - Sipariş listesi ve yönetimi  
+7. **Sipariş Oluştur** - Yeni sipariş oluşturma ekranı
+8. **Ayarlar** - Sistem ayarları ve konfigürasyonlar
+
+## 🔧 Teknoloji Stack
+- **Frontend:** React 18 + TypeScript
+- **State Management:** Redux Toolkit + Thunk
+- **Styling:** Tailwind CSS
+- **Forms:** Formik + Yup validation
+- **Routing:** React Router v6
+- **Charts:** ApexCharts
+- **Icons:** Lucide React
+- **API:** Axios (apiClient helper)
+- **i18n:** react-i18next
+
+### 📁 KLASÖR YAPISI
+```
+src/
+├── Common/                    # Yeniden kullanılabilir bileşenler
+│   ├── Components/           # UI bileşenleri (DataTable, Modal, Select, etc.)
+│   ├── constants/           # classNames, layout constants
+│   ├── data/               # Mock data ve helper'lar
+│   └── [domain]/           # Domain-specific selector'lar
+├── Layout/                  # Ana layout yapısı
+├── pages/                   # Sayfa bileşenleri
+│   ├── companies/          # Firmalar modülü
+│   ├── stocks/             # Stoklar modülü  
+│   ├── quotes/             # Teklifler modülü
+│   ├── orders/             # Siparişler modülü
+│   └── settings/           # Ayarlar modülü
+├── slices/                  # Redux slice'ları (reducer + thunk)
+├── Routes/                  # Route tanımlamaları
+└── helpers/                # API ve JWT helper'lar
+```
+
+## 🎨 YAZILIM KALİTE KURALLARI
+
+### 🚀 PERFORMANCE & MEMORY
+1. **React.memo()** kullanarak gereksiz re-render'ları önle
+2. **useMemo()** ve **useCallback()** ile expensive operations cache'le
+3. **Lazy loading** ile büyük component'leri yükle
+4. **Virtual scrolling** büyük listeler için kullan
+5. **Image optimization** ve **lazy loading** uygula
+6. **Bundle splitting** ile chunk size'ı minimize et
+
+### 🎯 UI/UX STANDARTLARI
+1. **Modal kullanımı SADECE filtreleme için** - profesyonel görünüm
+2. **InfiniteScroll pagination** tüm listelerde
+3. **Tutarlı spacing** ve **typography** kullan
+4. **Loading states** ve **error handling** her sayfada
+5. **Responsive design** tüm ekran boyutları için
+6. **Dark mode** desteği tam olmalı
+
+### 🔐 YETKİLENDİRME KURALLARI
+```typescript
+// JWT token'dan backend URL'i al
+const getUserBackendUrl = () => {
+  const token = getToken();
+  const payload = JWT.decode(token);
+  return payload.backendUrl;
+};
+
+// Lisans kontrolü
+const hasModuleAccess = (moduleId: string) => {
+  const userLicenses = getUserLicenses();
+  return userLicenses.includes(moduleId);
+};
+```
+
+## 🏗️ YENİ MODÜL OLUŞTURMA PATTERN'İ
+
+### 1. CRUD Sayfaları (pages/[moduleName]/)
+- `[moduleName]List.tsx` - InfiniteScroll + Filtering
+- `[moduleName]Add.tsx` - Formik + Yup validation  
+- `[moduleName]Edit.tsx` - Formik + Yup validation
+- `[moduleName]Detail.tsx` - Read-only detail view
+- `[moduleName]Filter.tsx` - Modal filtreleme component'i
+
+### 2. Redux Slice (slices/[moduleName]/)
+- `reducer.ts` - Interface + initialState + reducers
+- `thunk.ts` - CRUD operations + filtering + pagination
+
+### 3. Select Component (Common/[moduleName]/)
+- `[moduleName]Select.tsx` - InfiniteScrollSelect wrapper
+
+## 📊 LİST SAYFASI PATTERN'İ
+```typescript
+// Her list sayfasında bulunması gereken özellikler:
+const [items, setItems] = useState([]);
+const [loading, setLoading] = useState(false);
+const [hasMore, setHasMore] = useState(true);
+const [filters, setFilters] = useState({});
+const [showFilterModal, setShowFilterModal] = useState(false);
+
+// InfiniteScroll implementation
+const loadMore = useCallback(async () => {
+  if (loading || !hasMore) return;
+  // API call with pagination + filters
+}, [loading, hasMore, filters]);
+```
+
+## 🔍 FİLTRELEME SİSTEMİ
+```typescript
+// FilterModal component pattern
+interface FilterModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onApplyFilters: (filters: any) => void;
+  currentFilters: any;
+}
+
+// Filter state management
+const [appliedFilters, setAppliedFilters] = useState({});
+const [tempFilters, setTempFilters] = useState({});
+```
+
+## 🎯 SELECT COMPONENT PATTERN
+```typescript
+<GenericInfiniteScrollSelect
+  value={value}
+  onChange={onChange}
+  isDisabled={isDisabled}
+  className={className}
+  apiEndpoint="endpointName"
+  labelKey="name"
+  valueKey="id"
+  includeCompanyId={true}
+  backendUrl={getUserBackendUrl()} // Multi-tenant support
+/>
+```
+
+## 🔗 API YAPISI
+```typescript
+// Multi-tenant API helper
+const apiClient = axios.create({
+  baseURL: getUserBackendUrl(), // Dinamik backend URL
+  headers: {
+    'Authorization': `Bearer ${getToken()}`,
+    'Content-Type': 'application/json'
+  }
+});
+
+// Standard API patterns
+GET    /companies?page=1&size=20&filters={}
+POST   /companies
+PUT    /companies/{id}  
+DELETE /companies/{id}
+GET    /companies/{id}
+```
+
+## 🎨 CSS CLASSES & STYLING
+- **Container:** `container-fluid px-4 py-6`
+- **Card:** `bg-white dark:bg-zink-800 rounded-lg shadow-sm border`
+- **Input:** `defaultInputClassName` from constants
+- **Button:** `defaultButtonClassName` from constants
+- **List Item:** `hover:bg-gray-50 dark:hover:bg-zink-700 transition-colors`
+
+## 📱 RESPONSIVE BREAKPOINTS
+- **Mobile:** `sm:` (640px+)
+- **Tablet:** `md:` (768px+)  
+- **Laptop:** `lg:` (1024px+)
+- **Desktop:** `xl:` (1280px+)
+
+## 🚨 KRİTİK KURALLAR
+
+### ✅ YAPILMASI GEREKENLER
+1. **Her modül için tam CRUD + Filter + InfiniteScroll**
+2. **JWT token'dan backend URL'i dinamik al**
+3. **Lisans kontrolü her route'da yap**
+4. **Memory-efficient component'ler yaz**
+5. **TypeScript interface'leri detayıyla tanımla**
+6. **Error boundary'ler kullan**
+7. **Loading states ve skeleton'lar ekle**
+8. **Accessibility (a11y) kurallarına uy**
+
+### ❌ YAPILMAMASI GEREKENLER
+1. **Modal kullanma (sadece filtreleme hariç)**
+2. **Inline styling yapma**
+3. **any type kullanma (mümkün olduğunca)**
+4. **Memory leak'lere sebep olma**
+5. **Hard-coded backend URL'ler**
+6. **Gereksiz re-render'lar**
+7. **Bundle size'ı büyütme**
+
+## 💡 ÖRNEK MODÜL ADLANDIRMA
+- **Companies:** `/companies-list`, `/companies-add`, `/companies-edit`
+- **Stocks:** `/stocks-list`, `/stocks-add`, `/stocks-edit`  
+- **Quotes:** `/quotes-list`, `/quotes-create`, `/quotes-edit`
+- **Orders:** `/orders-list`, `/orders-create`, `/orders-edit`
+
+## 🎯 COMPONENT HİYERARŞİSİ
+1. **Page Components:** Business logic + layout + filtering
+2. **List Components:** InfiniteScroll + items rendering
+3. **Filter Components:** Modal-based filtering system
+4. **Form Components:** CRUD operations with validation
+5. **Common Components:** Reusable UI (DataTable, Select, etc.)
+
+## 🏢 İŞ MANTIKLARI
+- **Multi-tenant:** Her kullanıcı kendi verilerine erişir
+- **Lisans tabanlı:** Modül erişimleri lisanslara bağlı
+- **Performance odaklı:** Büyük veri setleri için optimize
+- **Scalable:** Kolayca yeni modül eklenebilir
+- **Professional:** Kurumsal kullanıma uygun kalite
+
+Bu kuralları her modül oluştururken ve her component yazarken mutlaka uygula! 
